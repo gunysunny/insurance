@@ -93,6 +93,7 @@ export default function Login() {
               text-base font-semibold
               hover:bg-blue-700
               disabled:opacity-50
+              cursor-pointer
             "
           >
             {loading ? '로그인 중...' : '로그인'}
