@@ -15,12 +15,12 @@ export default function Login() {
   return (
     // 🔹 전체 화면
     <div className="fixed inset-0 flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-10">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-5">
         {/* 🔹 로그인 카드 */}
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-10">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-5">
           {/* 타이틀 */}
           <div className="mb-10 text-center">
-            <h1 className="text-2xl font-bold mb-2">관리자 로그인</h1>
+            <h1 className="text-2xl font-bold mb-2 text-black">관리자 로그인</h1>
             <p className="text-sm text-gray-500">
               고객 관리를 위해 로그인해주세요
             </p>
