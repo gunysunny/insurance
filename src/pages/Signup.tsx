@@ -17,7 +17,7 @@ export default function Signup() {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-10">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-5">
         {/* 타이틀 */}
         <div className="mb-10 text-center">
           <h1 className="text-2xl font-bold mb-2">관리자 회원가입</h1>
