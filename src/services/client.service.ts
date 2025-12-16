@@ -68,6 +68,10 @@ export async function createClient(
   return data as Client[];
 }
 
+
+
+
+
 export async function fetchClientById(id: string): Promise<Client> {
   const {
     data: { user },
