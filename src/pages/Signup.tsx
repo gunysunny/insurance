@@ -125,7 +125,7 @@ export default function Signup() {
           이미 계정이 있으신가요?{' '}
           <Link
             to="/login"
-            className="text-blue-600 hover:underline font-medium"
+            className="text-blue-600 hover:underline font-medium cursor-pointer"
           >
             로그인
           </Link>
