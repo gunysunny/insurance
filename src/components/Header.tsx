@@ -15,7 +15,7 @@ export default function Header() {
     >
       <h2>보험 고객 관리</h2>
 
-      <button onClick={handleLogout}>로그아웃</button>
+      <button onClick={handleLogout} className='cursor-pointer'>로그아웃</button>
     </header>
   );
 }
