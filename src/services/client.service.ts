@@ -24,7 +24,7 @@ export async function createClient(
     .insert([
       {
         ...input,
-        user_id: user.id, // 그대로 유지
+        user_id: user.id,
       },
     ])
     .select();
@@ -35,4 +35,61 @@ export async function createClient(
   }
 
   return data as Client[];
+}
+
+/**
+ * 고객 목록 조회
+ */
+export async function fetchClients(): Promise<Client[]> {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    throw new Error('로그인이 필요합니다.');
+  }
+
+  const { data, error } = await supabase
+    .from('clients')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('FETCH CLIENTS ERROR:', error);
+    throw error;
+  }
+
+  return data as Client[];
+}
+
+/**
+ * 고객 단건 조회
+ */
+export async function fetchClientById(
+  id: string
+): Promise<Client> {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    throw new Error('로그인이 필요합니다.');
+  }
+
+  const { data, error } = await supabase
+    .from('clients')
+    .select('*')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single();
+
+  if (error) {
+    console.error('FETCH CLIENT DETAIL ERROR:', error);
+    throw error;
+  }
+
+  return data as Client;
 }
