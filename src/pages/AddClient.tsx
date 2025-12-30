@@ -2,32 +2,177 @@ import { useState } from 'react';
 import { useAddClient } from '@/hooks/useAddClient';
 import { useNavigate } from 'react-router-dom';
 
-export default function AddClient() {
-  const { submit, loading } = useAddClient();
-  const navigate = useNavigate();
+type RowClient = {
+  name: string;
+  phone: string;
+  relation: string;
+  rrn: string;
+  job: string;
+};
 
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [gender, setGender] = useState<'male' | 'female' | null>(null);
+type VehicleRow = {
+  contractor: string;
+  insured: string;
+  carNumber: string;
+  carType: string;
+  company: string;
+  expireDate: string;
+};
+
+type InsuranceRow = {
+  contractor: string;
+  insured: string;
+  product: string;
+  contractDate: string;
+  transferDate: string;
+  bank: string;
+  premium: string;
+};
+
+export default function AddClient() {
+  const navigate = useNavigate();
+  const { submit, loading } = useAddClient();
+
+  /* 고객 엑셀 행 */
+  const [rows, setRows] = useState<RowClient[]>([
+    { name: '', phone: '', relation: '', rrn: '', job: '' },
+  ]);
+
+  /* 신분증 */
+  const [idIssueOrg, setIdIssueOrg] = useState('');
+  const [idIssueDate, setIdIssueDate] = useState('');
+  const [licenseNo, setLicenseNo] = useState('');
+
+  /* 계좌 */
+  const [bank, setBank] = useState('');
+  const [accountHolder, setAccountHolder] = useState('');
+  const [accountNo, setAccountNo] = useState('');
+
+  /* 주소 */
   const [address, setAddress] = useState('');
-  const [birth, setBirth] = useState('');
-  const [memo, setMemo] = useState('');
+
+  /* 차량정보 */
+  const [vehicles, setVehicles] = useState<VehicleRow[]>([
+    {
+      contractor: '',
+      insured: '',
+      carNumber: '',
+      carType: '',
+      company: '',
+      expireDate: '',
+    },
+  ]);
+
+  /* 보험가입사항 */
+  const [insurances, setInsurances] = useState<InsuranceRow[]>([
+    {
+      contractor: '',
+      insured: '',
+      product: '',
+      contractDate: '',
+      transferDate: '',
+      bank: '',
+      premium: '',
+    },
+  ]);
+
+  const handleChange = (
+    index: number,
+    field: keyof RowClient,
+    value: string
+  ) => {
+    const next = [...rows];
+    next[index][field] = value;
+    setRows(next);
+  };
+
+  const addRow = () => {
+    setRows([
+      ...rows,
+      { name: '', phone: '', relation: '', rrn: '', job: '' },
+    ]);
+  };
+
+  const handleVehicleChange = (
+    index: number,
+    field: keyof VehicleRow,
+    value: string
+  ) => {
+    const next = [...vehicles];
+    next[index][field] = value;
+    setVehicles(next);
+  };
+
+  const addVehicleRow = () => {
+    setVehicles([
+      ...vehicles,
+      {
+        contractor: '',
+        insured: '',
+        carNumber: '',
+        carType: '',
+        company: '',
+        expireDate: '',
+      },
+    ]);
+  };
+
+  const handleInsuranceChange = (
+    index: number,
+    field: keyof InsuranceRow,
+    value: string
+  ) => {
+    const next = [...insurances];
+    next[index][field] = value;
+    setInsurances(next);
+  };
+
+  const addInsuranceRow = () => {
+    setInsurances([
+      ...insurances,
+      {
+        contractor: '',
+        insured: '',
+        product: '',
+        contractDate: '',
+        transferDate: '',
+        bank: '',
+        premium: '',
+      },
+    ]);
+  };
 
   const handleSubmit = async () => {
-    if (!name.trim()) {
-      alert('이름은 필수입니다');
-      return;
-    }
-
     try {
-      await submit({
-        name,
-        phone,
-        gender,
-        address: address || null,
-        birth: birth || null,
-        memo,
-      });
+      for (const row of rows) {
+        if (!row.name.trim()) continue;
+
+        await submit({
+          name: row.name,
+          phone: row.phone || null,
+          gender: null,
+          birth: null,
+          memo: null,
+          address: address || null,
+          extra: {
+            relation: row.relation,
+            rrn: row.rrn,
+            job: row.job,
+            identity: {
+              idIssueOrg,
+              idIssueDate,
+              licenseNo,
+            },
+            account: {
+              bank,
+              accountHolder,
+              accountNo,
+            },
+            vehicles,
+            insurances,
+          },
+        });
+      }
 
       alert('고객 등록 완료');
       navigate('/');
@@ -37,121 +182,267 @@ export default function AddClient() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-xl rounded-2xl bg-white p-10 shadow-lg">
-        {/* 타이틀 */}
-        <div className="mb-10">
-          <h1 className="text-2xl font-bold mb-2 text-black">신규 고객 등록</h1>
-          <p className="text-sm text-gray-500">
-            고객의 기본 정보와 상담 내용을 입력해주세요
-          </p>
+    <div className="min-h-screen bg-gray-50 p-6 text-black">
+      <div className="mx-auto max-w-6xl bg-white p-6 shadow space-y-10">
+        <h1 className="text-xl font-bold">고객 등록 (엑셀 형식)</h1>
+
+        {/* 고객 */}
+        <table className="w-full border border-gray-300 text-sm">
+          <thead className="bg-gray-100 text-black font-semibold text-lg">
+            <tr>
+              <th className="border w-12">No</th>
+              <th className="border">이름</th>
+              <th className="border">전화번호</th>
+              <th className="border">관계</th>
+              <th className="border">주민번호</th>
+              <th className="border">직업</th>
+            </tr>
+          </thead>
+          <tbody className="text-lg font-semibold text-black">
+            {rows.map((row, index) => (
+              <tr key={index}>
+                <td className="border text-center">{index + 1}</td>
+                {(['name', 'phone', 'relation', 'rrn', 'job'] as const).map(
+                  (field) => (
+                    <td key={field} className="border">
+                      <input
+                        value={row[field]}
+                        onChange={(e) =>
+                          handleChange(index, field, e.target.value)
+                        }
+                        className="w-full px-2 py-1 outline-none"
+                      />
+                    </td>
+                  )
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <button
+          onClick={addRow}
+          className="rounded bg-gray-200 px-4 py-2 text-black cursor-pointer"
+        >
+          + 인원 추가
+        </button>
+
+        {/* 신분증 */}
+        <div>
+          <h2 className="mb-2 font-semibold text-lg">신분증</h2>
+          <table className="w-full border border-gray-300">
+            <thead className="bg-gray-100 font-semibold">
+              <tr>
+                <th className="border px-4 py-2">발급기관</th>
+                <th className="border px-4 py-2">발급일</th>
+                <th className="border px-4 py-2">면허번호</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="border">
+                  <input className="w-full px-4 py-2 outline-none text-lg font-semibold"
+                    value={idIssueOrg}
+                    onChange={(e) => setIdIssueOrg(e.target.value)}
+                  />
+                </td>
+                <td className="border">
+                  <input type="date"
+                    className="w-full px-4 py-2 outline-none text-lg font-semibold"
+                    value={idIssueDate}
+                    onChange={(e) => setIdIssueDate(e.target.value)}
+                  />
+                </td>
+                <td className="border">
+                  <input className="w-full px-4 py-2 outline-none text-lg font-semibold"
+                    value={licenseNo}
+                    onChange={(e) => setLicenseNo(e.target.value)}
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
-        {/* 입력 폼 */}
-        <div className="space-y-8">
-          {/* 이름 */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-gray-700">
-              이름 <span className="text-red-500">*</span>
-            </label>
-            <input
-              placeholder="이름"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="rounded-xl bg-gray-200 px-5 py-3 text-base outline-none focus:ring-2 focus:ring-blue-500 text-black"
-            />
-          </div>
-
-          {/* 전화번호 */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-gray-700">
-              전화번호
-            </label>
-            <input
-              placeholder="010-0000-0000"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="rounded-xl bg-gray-200 px-5 py-3 text-base outline-none focus:ring-2 focus:ring-blue-500 text-black"
-            />
-          </div>
-
-          {/* 성별 */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-gray-700">
-              성별
-            </label>
-            <select
-              value={gender ?? ''}
-              onChange={(e) =>
-                setGender(
-                  e.target.value === ''
-                    ? null
-                    : (e.target.value as 'male' | 'female')
-                )
-              }
-              className="rounded-xl bg-gray-200 px-5 py-3 text-base outline-none focus:ring-2 focus:ring-blue-500 text-black"
-            >
-              <option value="">선택 안 함</option>
-              <option value="male">남성</option>
-              <option value="female">여성</option>
-            </select>
-          </div>
-
-          {/* 주소 */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-gray-700">
-              주소
-            </label>
-            <input
-              placeholder="주소"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              className="rounded-xl bg-gray-200 px-5 py-3 text-base outline-none focus:ring-2 focus:ring-blue-500 text-black"
-            />
-          </div>
-
-          {/* 생년월일 */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-gray-700">
-              생년월일
-            </label>
-            <input
-              type="date"
-              value={birth}
-              onChange={(e) => setBirth(e.target.value)}
-              className="rounded-xl bg-gray-200 px-5 py-3 text-base outline-none focus:ring-2 focus:ring-blue-500 text-black"
-            />
-          </div>
-
-          {/* 메모 */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-gray-700">
-              보험 / 상담 메모
-            </label>
-            <textarea
-              placeholder="상담 내용, 가입 보험, 특이사항 등을 자유롭게 적어주세요"
-              value={memo}
-              onChange={(e) => setMemo(e.target.value)}
-              className="h-32 resize-none rounded-xl bg-gray-200 px-5 py-3 text-base outline-none focus:ring-2 focus:ring-blue-500 text-black"
-            />
-          </div>
+        {/* 계좌 */}
+        <div>
+          <h2 className="mb-2 font-semibold text-lg">계좌</h2>
+          <table className="w-full border border-gray-300">
+            <thead className="bg-gray-100 font-semibold">
+              <tr>
+                <th className="border px-2 py-2">금융기관</th>
+                <th className="border px-2 py-2">예금주</th>
+                <th className="border px-2 py-2">계좌번호</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="border">
+                  <input className="w-full px-2 py-1 outline-none text-lg font-semibold"
+                    value={bank}
+                    onChange={(e) => setBank(e.target.value)}
+                  />
+                </td>
+                <td className="border">
+                  <input className="w-full px-2 py-1 outline-none text-lg font-semibold"
+                    value={accountHolder}
+                    onChange={(e) => setAccountHolder(e.target.value)}
+                  />
+                </td>
+                <td className="border">
+                  <input className="w-full px-2 py-1 outline-none text-lg font-semibold"
+                    value={accountNo}
+                    onChange={(e) => setAccountNo(e.target.value)}
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
-        {/* 버튼 영역 */}
-        <div className="mt-12 flex gap-4">
+        {/* 주소 */}
+        <div>
+          <h2 className="mb-2 font-semibold text-lg text-black">주소</h2>
+          <table className="w-full border border-gray-700 border-collapse">
+            <tbody>
+              <tr>
+                <td className="border border-gray-700">
+                  <input
+                    className="w-full px-2 py-2 outline-none text-lg font-semibold"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* 차량정보 */}
+        <div>
+          <h2 className="mb-2 font-semibold text-lg">차량정보</h2>
+          <table className="w-full border border-gray-300">
+            <thead className="bg-gray-100 font-semibold">
+              <tr>
+                <th className="border">계약자</th>
+                <th className="border">피보험자</th>
+                <th className="border">차량번호</th>
+                <th className="border">차종(운전범위)</th>
+                <th className="border">가입회사</th>
+                <th className="border">만기일</th>
+              </tr>
+            </thead>
+            <tbody>
+              {vehicles.map((row, index) => (
+                <tr key={index}>
+                  {(
+                    [
+                      'contractor',
+                      'insured',
+                      'carNumber',
+                      'carType',
+                      'company',
+                      'expireDate',
+                    ] as const
+                  ).map((field) => (
+                    <td key={field} className="border">
+                      <input
+                        type={field === 'expireDate' ? 'date' : 'text'}
+                        value={row[field]}
+                        onChange={(e) =>
+                          handleVehicleChange(index, field, e.target.value)
+                        }
+                        className="w-full px-2 py-1 outline-none text-lg font-semibold"
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
           <button
-            onClick={() => navigate(-1)}
-            className="flex-1 rounded-xl bg-gray-300 py-4 font-medium text-gray-700 hover:bg-gray-400 cursor-pointer"
+            onClick={addVehicleRow}
+            className="mt-2 rounded bg-gray-200 px-4 py-2 cursor-pointer"
           >
-            취소
+            + 차량 추가
           </button>
+        </div>
 
+        {/* 보험가입사항 */}
+        <div>
+          <h2 className="mb-2 font-semibold text-lg">보험가입사항</h2>
+          <table className="w-full border border-gray-300">
+            <thead className="bg-gray-100 font-semibold">
+              <tr>
+                <th className="border w-12">No</th>
+                <th className="border">계약자</th>
+                <th className="border">피보험자</th>
+                <th className="border">상품명 / 회사</th>
+                <th className="border">계약일</th>
+                <th className="border">이체일</th>
+                <th className="border">은행</th>
+                <th className="border">보험료</th>
+              </tr>
+            </thead>
+            <tbody>
+              {insurances.map((row, index) => (
+                <tr key={index}>
+                  <td className="border text-center font-semibold">
+                    {index + 1}
+                  </td>
+                  {(
+                    [
+                      'contractor',
+                      'insured',
+                      'product',
+                      'contractDate',
+                      'transferDate',
+                      'bank',
+                      'premium',
+                    ] as const
+                  ).map((field) => (
+                    <td key={field} className="border">
+                      <input
+                        type={
+                          field === 'contractDate' || field === 'transferDate'
+                            ? 'date'
+                            : 'text'
+                        }
+                        value={row[field]}
+                        onChange={(e) =>
+                          handleInsuranceChange(index, field, e.target.value)
+                        }
+                        className="w-full px-2 py-1 outline-none text-lg font-semibold"
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <button
+            onClick={addInsuranceRow}
+            className="mt-2 rounded bg-gray-200 px-4 py-2 cursor-pointer"
+          >
+            + 보험 추가
+          </button>
+        </div>
+
+        {/* 버튼 */}
+        <div className="flex gap-3 pt-4">
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="flex-1 rounded-xl bg-blue-600 py-4 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
+            className="rounded bg-blue-600 px-6 py-2 text-white disabled:opacity-50 cursor-pointer"
           >
-            {loading ? '저장 중...' : '등록'}
+            {loading ? '저장 중...' : '저장'}
+          </button>
+          <button
+            onClick={() => navigate(-1)}
+            className="rounded bg-gray-300 px-4 py-2 cursor-pointer"
+          >
+            취소
           </button>
         </div>
       </div>
