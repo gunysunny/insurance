@@ -1,6 +1,8 @@
-import { useState } from 'react';
-import { useAddClient } from '@/hooks/useAddClient';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useClientDetail } from '@/hooks/useClientDetail';
+import { supabase } from '@/lib/supabase';
+import type { ClientExtra } from '@/types/client';
 
 type RowClient = {
   name: string;
@@ -29,29 +31,33 @@ type InsuranceRow = {
   premium: string;
 };
 
-export default function AddClient() {
+export default function EditClient() {
   const navigate = useNavigate();
-  const { submit, loading } = useAddClient();
+  const { id } = useParams<{ id: string }>();
 
-  /* 고객 엑셀 행 */
+  if (!id) return <p className="p-6">잘못된 접근입니다.</p>;
+
+  const { client, loading } = useClientDetail(id);
+
+  /* ===== 고객 ===== */
   const [rows, setRows] = useState<RowClient[]>([
     { name: '', phone: '', relation: '', rrn: '', job: '' },
   ]);
 
-  /* 신분증 */
+  /* ===== 신분증 ===== */
   const [idIssueOrg, setIdIssueOrg] = useState('');
   const [idIssueDate, setIdIssueDate] = useState('');
   const [licenseNo, setLicenseNo] = useState('');
 
-  /* 계좌 */
+  /* ===== 계좌 ===== */
   const [bank, setBank] = useState('');
   const [accountHolder, setAccountHolder] = useState('');
   const [accountNo, setAccountNo] = useState('');
 
-  /* 주소 */
+  /* ===== 주소 ===== */
   const [address, setAddress] = useState('');
 
-  /* 차량정보 */
+  /* ===== 차량 ===== */
   const [vehicles, setVehicles] = useState<VehicleRow[]>([
     {
       contractor: '',
@@ -63,7 +69,7 @@ export default function AddClient() {
     },
   ]);
 
-  /* 보험가입사항 */
+  /* ===== 보험 ===== */
   const [insurances, setInsurances] = useState<InsuranceRow[]>([
     {
       contractor: '',
@@ -75,7 +81,83 @@ export default function AddClient() {
       premium: '',
     },
   ]);
+
+  /* ===== 메모 ===== */
   const [memoText, setMemoText] = useState('');
+
+  /* ===== 🔥 기존 데이터 → 그대로 채우기 ===== */
+  useEffect(() => {
+    if (!client) return;
+
+    setRows([
+      {
+        name: client.name,
+        phone: client.phone ?? '',
+        relation: client.extra?.relation ?? '',
+        rrn: client.extra?.rrn ?? '',
+        job: client.extra?.job ?? '',
+      },
+    ]);
+
+    setIdIssueOrg(client.extra?.identity?.idIssueOrg ?? '');
+    setIdIssueDate(client.extra?.identity?.idIssueDate ?? '');
+    setLicenseNo(client.extra?.identity?.licenseNo ?? '');
+
+    setBank(client.extra?.account?.bank ?? '');
+    setAccountHolder(client.extra?.account?.accountHolder ?? '');
+    setAccountNo(client.extra?.account?.accountNo ?? '');
+
+    setAddress(client.address ?? '');
+    setMemoText(client.memo ?? '');
+
+    setVehicles(
+      client.extra?.vehicles?.length
+        ? client.extra.vehicles.map((v) => ({
+            contractor: v.contractor ?? '',
+            insured: v.insured ?? '',
+            carNumber: v.carNumber ?? '',
+            carType: v.carType ?? '',
+            company: v.company ?? '',
+            expireDate: v.expireDate ?? '',
+          }))
+        : [
+            {
+              contractor: '',
+              insured: '',
+              carNumber: '',
+              carType: '',
+              company: '',
+              expireDate: '',
+            },
+          ]
+    );
+
+    setInsurances(
+      client.extra?.insurances?.length
+        ? client.extra.insurances.map((i) => ({
+            contractor: i.contractor ?? '',
+            insured: i.insured ?? '',
+            product: i.product ?? '',
+            contractDate: i.contractDate ?? '',
+            transferDate: i.transferDate ?? '',
+            bank: i.bank ?? '',
+            premium: i.premium ?? '',
+          }))
+        : [
+            {
+              contractor: '',
+              insured: '',
+              product: '',
+              contractDate: '',
+              transferDate: '',
+              bank: '',
+              premium: '',
+            },
+          ]
+    );
+  }, [client]);
+
+  /* ===== 핸들러 (AddClient 그대로) ===== */
 
   const handleChange = (
     index: number,
@@ -143,44 +225,47 @@ export default function AddClient() {
     ]);
   };
 
+  /* ===== 저장 (UPDATE) ===== */
+
   const handleSubmit = async () => {
     try {
-      for (const row of rows) {
-        if (!row.name.trim()) continue;
+      const extra: ClientExtra = {
+        relation: rows[0].relation,
+        rrn: rows[0].rrn,
+        job: rows[0].job,
+        identity: { idIssueOrg, idIssueDate, licenseNo },
+        account: { bank, accountHolder, accountNo },
+        vehicles,
+        insurances,
+      };
 
-        await submit({
-          name: row.name,
-          phone: row.phone || null,
-          gender: null,
-          birth: null,
-          memo: memoText || null,       // ✅ 여기로 변경
+      const { error } = await supabase
+        .from('clients')
+        .update({
+          name: rows[0].name,
+          phone: rows[0].phone || null,
           address: address || null,
-          extra: {
-            relation: row.relation,
-            rrn: row.rrn,
-            job: row.job,
-            identity: {
-              idIssueOrg,
-              idIssueDate,
-              licenseNo,
-            },
-            account: {
-              bank,
-              accountHolder,
-              accountNo,
-            },
-            vehicles,
-            insurances,
-          },
-        });
-      }
+          memo: memoText || null,
+          extra,
+        })
+        .eq('id', id);
 
-      alert('고객 등록 완료');
-      navigate('/');
+      if (error) throw error;
+
+      alert('고객 정보 수정 완료');
+
+      navigate(`/clients/${id}`, {
+        state: { updated: true },
+      });
+
     } catch (e: any) {
       alert(e.message);
     }
   };
+
+  if (loading) return <p className="p-6">로딩중...</p>;
+
+  /* ===== UI (AddClient와 완전 동일) ===== */
 
   return (
     <div className="min-h-screen bg-gray-50 p-6 text-black">

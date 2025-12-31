@@ -67,9 +67,7 @@ export async function fetchClients(): Promise<Client[]> {
 /**
  * 고객 단건 조회
  */
-export async function fetchClientById(
-  id: string
-): Promise<Client> {
+export async function fetchClientById(id: string): Promise<Client> {
   const {
     data: { user },
     error: userError,
@@ -83,7 +81,7 @@ export async function fetchClientById(
     .from('clients')
     .select('*')
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', user.id) // 🔥 이 줄이 핵심
     .single();
 
   if (error) {

@@ -4,30 +4,28 @@ import Signup from '@/pages/Signup';
 import ClientList from '@/pages/ClientList';
 import AddClient from '@/pages/AddClient';
 import ClientDetail from '@/pages/ClientDetail';
-
+import EditClient from '@/pages/EditClient';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import ProtectedLayout from '@/components/ProtectedLayout';
 
 export const router = createBrowserRouter([
-  // 🔓 로그인 / 회원가입 (레이아웃 ❌)
+  // 🔓 로그인 / 회원가입
   { path: '/login', element: <Login /> },
   { path: '/signup', element: <Signup /> },
 
-  // 🔐 로그인 후 영역 (레이아웃 ⭕)
+  // 🔐 보호 영역
   {
-    path: '/',
-    element: (
-      <ProtectedRoute>
-        <ProtectedLayout />
-      </ProtectedRoute>
-    ),
+    element: <ProtectedRoute />, // ✅ children 전달 ❌
     children: [
-      // 메인 페이지
-      { index: true, element: <ClientList /> },
-      // 신규 고객 등록
-      { path: 'clients/new', element: <AddClient /> },
-      // 🔥 고객 상세 페이지 (추가)
-      { path: 'clients/:id', element: <ClientDetail /> },
+      {
+        element: <ProtectedLayout />, // 레이아웃
+        children: [
+          { index: true, element: <ClientList /> },
+          { path: 'clients/new', element: <AddClient /> },
+          { path: 'clients/:id', element: <ClientDetail /> },
+          { path: 'clients/:id/edit', element: <EditClient /> },
+        ],
+      },
     ],
   },
 ]);
